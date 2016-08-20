@@ -8,15 +8,11 @@ import (
 )
 
 type api struct {
-	data map[string]Project
+	store DataStore
 }
 
 func (a *api) list(dec *json.Decoder, httpData *jsonapi.HTTP) (interface{}, error) {
-	ret := make([]Project, 0, len(a.data))
-	for _, p := range a.data {
-		ret = append(ret, p)
-	}
-	return ret, nil
+	return a.store.List()
 }
 
 func (a *api) setOwner(dec *json.Decoder, httpData *jsonapi.HTTP) (interface{}, error) {
@@ -31,26 +27,12 @@ func (a *api) setOwner(dec *json.Decoder, httpData *jsonapi.HTTP) (interface{}, 
 		return nil, jsonapi.Error{http.StatusBadRequest, "Parameter error"}
 	}
 
-	found := false
-	proj, ok := a.data[param.Repo]
-	if !ok {
-		return nil, jsonapi.Error{http.StatusNotFound, "Repository not found"}
-	}
-	for i, b := range proj.Branches {
-		if b.Name != param.Branch {
-			continue
-		}
-
-		found = true
-		a.data[param.Repo].Branches[i].Owner = param.Owner
-		break
+	// non of these fields can be empty
+	if param.Repo == "" || param.Branch == "" || param.Owner == "" {
+		return nil, jsonapi.Error{http.StatusBadRequest, "Parameter cannot be empty"}
 	}
 
-	if !found {
-		return nil, jsonapi.Error{http.StatusNotFound, "Branch not found"}
-	}
-
-	return nil, nil
+	return nil, a.store.UpdateOwner(param.Repo, param.Branch, param.Owner)
 }
 
 func (a *api) setDesc(dec *json.Decoder, httpData *jsonapi.HTTP) (interface{}, error) {
@@ -65,24 +47,10 @@ func (a *api) setDesc(dec *json.Decoder, httpData *jsonapi.HTTP) (interface{}, e
 		return nil, jsonapi.Error{http.StatusBadRequest, "Parameter error"}
 	}
 
-	found := false
-	proj, ok := a.data[param.Repo]
-	if !ok {
-		return nil, jsonapi.Error{http.StatusNotFound, "Repository not found"}
-	}
-	for i, b := range proj.Branches {
-		if b.Name != param.Branch {
-			continue
-		}
-
-		found = true
-		a.data[param.Repo].Branches[i].Desc = param.Desc
-		break
+	// non of these fields can be empty
+	if param.Repo == "" || param.Branch == "" || param.Desc == "" {
+		return nil, jsonapi.Error{http.StatusBadRequest, "Parameter cannot be empty"}
 	}
 
-	if !found {
-		return nil, jsonapi.Error{http.StatusNotFound, "Branch not found"}
-	}
-
-	return nil, nil
+	return nil, a.store.UpdateDesc(param.Repo, param.Branch, param.Desc)
 }

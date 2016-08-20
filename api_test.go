@@ -7,15 +7,15 @@ import (
 	"github.com/Patrolavia/jsonapi"
 )
 
-var data = map[string]Project{
-	"a": Project{
+var data = []Project{
+	Project{
 		Name: "a",
 		Branches: []Branch{
 			Branch{"main", "ronmi", "stable"},
 			Branch{"dev", "ronmi", "develop"},
 		},
 	},
-	"b": Project{
+	Project{
 		Name: "b",
 		Branches: []Branch{
 			Branch{"main", "ronmi", "stable"},
@@ -23,7 +23,7 @@ var data = map[string]Project{
 			Branch{"exp", "fraina", "experimental"},
 		},
 	},
-	"c": Project{
+	Project{
 		Name: "c",
 		Branches: []Branch{
 			Branch{"main", "ronmi", "stable"},
@@ -33,7 +33,7 @@ var data = map[string]Project{
 }
 
 func makeAPI() *api {
-	return &api{data}
+	return &api{&MemStore{data}}
 }
 
 func findProject(ps []Project, name string) (ret Project, ok bool) {
@@ -75,7 +75,7 @@ func TestAPIList(t *testing.T) {
 			t.Errorf("expected %s exists, but not found", name)
 		}
 
-		expect := data[name]
+		expect, _ := findProject(data, name)
 
 		if l, e := len(p.Branches), len(expect.Branches); l != e {
 			t.Errorf("expected %d branches in %s, got %d", e, name, l)

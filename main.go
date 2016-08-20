@@ -7,15 +7,15 @@ import (
 )
 
 func main() {
-	myapi := &api{map[string]Project{
-		"Ronmi/react-toy-router": Project{
+	store := &MemStore{[]Project{
+		Project{
 			Name: "Ronmi/react-toy-router",
 			Branches: []Branch{
 				Branch{"main", "ronmi", "stable"},
 				Branch{"dev", "ronmi", "develop"},
 			},
 		},
-		"Ronmi/react-promise-visualizer": Project{
+		Project{
 			Name: "Ronmi/react-promise-visualizer",
 			Branches: []Branch{
 				Branch{"main", "ronmi", "stable"},
@@ -23,7 +23,7 @@ func main() {
 				Branch{"exp", "fraina", "experimental"},
 			},
 		},
-		"Ronmi/some-go-project": Project{
+		Project{
 			Name: "Ronmi/some-go-project",
 			Branches: []Branch{
 				Branch{"main", "ronmi", "stable"},
@@ -31,6 +31,8 @@ func main() {
 			},
 		},
 	}}
+
+	myapi := &api{store}
 
 	jsonapi.Register([]jsonapi.API{
 		jsonapi.API{"/api/list", myapi.list},
