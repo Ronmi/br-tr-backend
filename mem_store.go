@@ -63,3 +63,27 @@ func (s *MemStore) UpdateDesc(repo, branch, desc string) (err error) {
 	}
 	return
 }
+
+func (s *MemStore) AddProjects(ps []Project) error {
+	// create a repo_name => array index map
+	lookup := make(map[string]int)
+	for idx, p := range s.projects {
+		lookup[p.Name] = idx
+	}
+
+	// insert or update it
+	for _, p := range ps {
+		idx, ok := lookup[p.Name]
+		if !ok {
+			// insert
+			lookup[p.Name] = len(s.projects)
+			s.projects = append(s.projects, p)
+			continue
+		}
+
+		// update
+		s.projects[idx] = p
+	}
+
+	return nil
+}

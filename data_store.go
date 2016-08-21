@@ -6,8 +6,7 @@ type DataStore interface {
 	UpdateDesc(repo, branch, desc string) error
 	List() ([]Project, error)
 
-	// TODO: We will need theses methods to fully operate on the db,
-	//       but right now, the signature is only list here as reminder.
-	// AddProject(p Project) error
-	// AddBranch(repo string, br Branch) error
+	// insert or update projects into store
+	AddProjects(ps []Project) error
+	//AddBranch(repo string, br Branch) error
 }
