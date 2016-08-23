@@ -3,11 +3,12 @@ package main
 import (
 	"fmt"
 	"reflect"
+	"sync"
 	"testing"
 )
 
 func makeMemStore() *MemStore {
-	return &MemStore{data}
+	return &MemStore{data, &sync.RWMutex{}}
 }
 
 func TestMemStoreList(t *testing.T) {
@@ -74,7 +75,7 @@ func TestMemStoreAddProjects(t *testing.T) {
 		Project{
 			Name: "c",
 			Branches: []Branch{
-				Branch{"main", "ronmi", "stable"},
+				Branch{"main", "", ""},
 			},
 		},
 		Project{
@@ -112,12 +113,24 @@ func TestMemStoreAddProjects(t *testing.T) {
 	lst := map[string]Project{
 		"a": data[0],
 		"b": data[1],
-		"c": append[0],
+		// c needs special cares
 		"d": append[1],
 	}
 	for n, p := range lst {
 		if err := test(actual, n, p); err != "" {
 			t.Error(err)
 		}
+	}
+
+	// take care of "c"
+	err := test(actual, "c", Project{
+		Name: "c",
+		Branches: []Branch{
+			Branch{"main", "ronmi", "stable"},
+		},
+	})
+
+	if err != "" {
+		t.Error(err)
 	}
 }

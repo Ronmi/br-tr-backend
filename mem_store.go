@@ -83,7 +83,7 @@ func (s *MemStore) AddProjects(ps []Project) error {
 		lookup[p.Name] = idx
 	}
 
-	// insert or update it
+	// insert non-exist project and branch, leave existing branch untouched
 	for _, p := range ps {
 		idx, ok := lookup[p.Name]
 		if !ok {
@@ -93,7 +93,21 @@ func (s *MemStore) AddProjects(ps []Project) error {
 			continue
 		}
 
-		// update
+		// project exists, overwrite with old data only if exists both side,
+		// so old data will not be overwritten by new data, and new one can
+		// still insert/delete to it
+		lst := map[string]*Branch{}
+		for idx, b := range p.Branches {
+			lst[b.Name] = &(p.Branches[idx])
+		}
+
+		for _, b := range s.projects[idx].Branches {
+			dest, ok := lst[b.Name]
+			if ok {
+				dest.Owner = b.Owner
+				dest.Desc = b.Desc
+			}
+		}
 		s.projects[idx] = p
 	}
 
