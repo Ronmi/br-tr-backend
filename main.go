@@ -58,7 +58,7 @@ func main() {
 	glconf := loadGitlabConf("gitlab.json")
 
 	myapi := &api{store}
-	mywebhook := &webhook{gogitlab.NewGitlab(glconf.URL, glconf.Path, glconf.Token), store}
+	mywebhook := &webhook{&GogitlabProvider{gogitlab.NewGitlab(glconf.URL, glconf.Path, glconf.Token)}, store}
 
 	jsonapi.Register([]jsonapi.API{
 		jsonapi.API{"/api/list", myapi.list},

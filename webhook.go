@@ -3,14 +3,12 @@ package main
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
 
 	"github.com/Patrolavia/jsonapi"
-	gogitlab "github.com/plouc/go-gitlab-client"
 )
 
 type webhook struct {
-	client *gogitlab.Gitlab
+	gitlab GitlabProvider
 	store  DataStore
 }
 
@@ -61,7 +59,7 @@ func (w *webhook) entry(dec *json.Decoder, httpData *jsonapi.HTTP) (ret interfac
 }
 
 func (w *webhook) fetchProject(n string, id int) (err error) {
-	brs, err := w.client.ProjectBranches(strconv.Itoa(id))
+	brs, err := w.gitlab.Branches(id)
 	if err != nil {
 		return
 	}
@@ -72,7 +70,7 @@ func (w *webhook) fetchProject(n string, id int) (err error) {
 	}
 
 	for _, br := range brs {
-		p.Branches = append(p.Branches, Branch{Name: br.Name})
+		p.Branches = append(p.Branches, Branch{Name: br})
 	}
 
 	return w.store.AddProjects([]Project{p})
