@@ -1,11 +1,14 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"sync"
+)
 
 // MemStore stores project and branch info in memory
 type MemStore struct {
 	projects []Project
-	lock *sync.RWMutex
+	lock     *sync.RWMutex
 }
 
 func (s *MemStore) List() (ret []Project, err error) {
