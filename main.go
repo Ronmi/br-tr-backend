@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/http"
+	"sync"
 
 	"github.com/Patrolavia/jsonapi"
 )
@@ -30,7 +31,7 @@ func main() {
 				Branch{"dev", "ronmi", "develop"},
 			},
 		},
-	}}
+	}, &sync.RWMutex{}}
 
 	myapi := &api{store}
 
