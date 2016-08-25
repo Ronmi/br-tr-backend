@@ -43,3 +43,16 @@ func TestMemKVStore(t *testing.T) {
 		t.Errorf("expected expire, got %#v", v)
 	}
 }
+
+func TestMemKVStoreSetIf(t *testing.T) {
+	s := NewMemStore()
+
+	s.Set("test", 1, 500)
+	if s.SetIf("test", 2, 2, 500) {
+		t.Fatal("expected SetIf failed, but it success")
+	}
+	if !s.SetIf("test", 2, 1, 500) {
+		t.Fatal("expected SetIf success, but it failed")
+	}
+
+}

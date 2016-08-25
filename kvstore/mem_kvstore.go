@@ -26,12 +26,15 @@ func (s *memoryStore) Set(k string, v interface{}, ttl int) {
 	s.doSet(k, v, ttl)
 }
 
-func (s *memoryStore) SetIf(k string, v, oldValue interface{}, ttl int) {
+func (s *memoryStore) SetIf(k string, v, oldValue interface{}, ttl int) bool {
 	s.lock.Lock()
 	defer s.lock.Unlock()
+	ret := false
 	if s.doGet(k) == oldValue {
 		s.doSet(k, v, ttl)
+		ret = true
 	}
+	return ret
 }
 
 func (s *memoryStore) doGet(k string) (ret interface{}) {
