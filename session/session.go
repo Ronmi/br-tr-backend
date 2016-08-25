@@ -11,7 +11,7 @@ import (
 
 const SessionIDLength = 16
 const DefaultTTL = 3600000 // default 1hr
-const chars = "`1234567890-=qwertyuiop[]asdfghjkl;'zxcvbnm,./QWERTYUIOPLKJHGFDSAZXCVBNM<>?{}~!@#$%^&*()_+\""
+const chars = "1234567890-qwertyuiopasdfghjklzxcvbnm,.QWERTYUIOPLKJHGFDSAZXCVBNM~#%&_+"
 
 func init() {
 	rand.Seed(time.Now().UnixNano())
@@ -35,7 +35,7 @@ type Manager struct {
 	TTL   int
 }
 
-func (m *Manager) ttl() int {
+func (m *Manager) GetTTL() int {
 	if m.TTL > 0 {
 		return m.TTL
 	}
@@ -76,7 +76,7 @@ func (m *Manager) mathRandomString() string {
 func (m *Manager) Allocate() (sid string, data *SessionData) {
 	sid = m.randomString()
 	data = &SessionData{}
-	ttl := m.ttl()
+	ttl := m.GetTTL()
 
 	for !m.Store.SetIf(sid, data, nil, ttl) {
 		sid = m.randomString()
@@ -86,7 +86,7 @@ func (m *Manager) Allocate() (sid string, data *SessionData) {
 
 // Save session data
 func (m *Manager) Save(sid string, data *SessionData) {
-	m.Store.Set(sid, data, m.ttl())
+	m.Store.Set(sid, data, m.GetTTL())
 }
 
 // Destroy a session
