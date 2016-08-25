@@ -8,6 +8,8 @@ import (
 	"sync"
 
 	"github.com/Patrolavia/jsonapi"
+	"github.com/Ronmi/br-tr-backend/kvstore"
+	"github.com/Ronmi/br-tr-backend/session"
 	gogitlab "github.com/plouc/go-gitlab-client"
 )
 
@@ -31,41 +33,23 @@ func loadGitlabConf(fn string) (ret gitlabConf) {
 }
 
 func main() {
-	store := &MemStore{[]Project{
-		Project{
-			Name: "Ronmi/react-toy-router",
-			Branches: []Branch{
-				Branch{"main", "ronmi", "stable"},
-				Branch{"dev", "ronmi", "develop"},
-			},
-		},
-		Project{
-			Name: "Ronmi/react-promise-visualizer",
-			Branches: []Branch{
-				Branch{"main", "ronmi", "stable"},
-				Branch{"dev", "ronmi", "develop"},
-				Branch{"exp", "fraina", "experimental"},
-			},
-		},
-		Project{
-			Name: "Ronmi/some-go-project",
-			Branches: []Branch{
-				Branch{"main", "ronmi", "stable"},
-				Branch{"dev", "ronmi", "develop"},
-			},
-		},
-	}, &sync.RWMutex{}}
-	glconf := loadGitlabConf("gitlab.json")
+	store := &MemStore{[]Project{}, &sync.RWMutex{}}
+	conf := loadGitlabConf("gitlab.json")
 
 	myapi := &api{store}
-	mywebhook := &webhook{&GogitlabProvider{gogitlab.NewGitlab(glconf.URL, glconf.Path, glconf.Token)}, store}
+	mywebhook := &webhook{&GogitlabProvider{gogitlab.NewGitlab(conf.URL, conf.Path, conf.Token)}, store}
 
+	// create session middleware
+	mux := http.NewServeMux()
+	http.Handle("/api/", session.Middleware(&session.Manager{Store: kvstore.NewMemStore()}, mux))
+
+	// apis
 	jsonapi.Register([]jsonapi.API{
 		jsonapi.API{"/api/list", myapi.list},
 		jsonapi.API{"/api/setOwner", myapi.setOwner},
 		jsonapi.API{"/api/setDesc", myapi.setDesc},
 		jsonapi.API{"/api/webhook", mywebhook.entry},
-	}, nil)
+	}, mux)
 
 	http.ListenAndServe(":8000", nil)
 }
