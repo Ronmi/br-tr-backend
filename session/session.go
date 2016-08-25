@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/Ronmi/br-tr-backend/kvstore"
+	gogitlab "github.com/plouc/go-gitlab-client"
+	"golang.org/x/oauth2"
 )
 
 const SessionIDLength = 16
@@ -19,7 +21,9 @@ func init() {
 
 // SessionData defines what kind of data to be stored in session store
 type SessionData struct {
-	Token string // gitlab access token
+	Token         *oauth2.Token // gitlab access token
+	ValidateOAUTH string
+	User          gogitlab.User
 }
 
 func (d *SessionData) MarshalJSON() ([]byte, error) {

@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"sync"
 
+	"golang.org/x/oauth2"
+
 	"github.com/Patrolavia/jsonapi"
 	"github.com/Ronmi/br-tr-backend/kvstore"
 	"github.com/Ronmi/br-tr-backend/session"
@@ -14,9 +16,11 @@ import (
 )
 
 type gitlabConf struct {
-	URL   string `json:"baseUrl"`
-	Path  string `json:"apiPath"`
-	Token string `json:"token"`
+	URL    string `json:"baseUrl"`
+	Path   string `json:"apiPath"`
+	Token  string `json:"token"`
+	AppID  string `json:"appID"`
+	Secret string `json:"appSecret"`
 }
 
 func loadGitlabConf(fn string) (ret gitlabConf) {
@@ -35,9 +39,17 @@ func loadGitlabConf(fn string) (ret gitlabConf) {
 func main() {
 	store := &MemStore{[]Project{}, &sync.RWMutex{}}
 	conf := loadGitlabConf("gitlab.json")
-
 	myapi := &api{store}
 	mywebhook := &webhook{&GogitlabProvider{gogitlab.NewGitlab(conf.URL, conf.Path, conf.Token)}, store}
+	oauth := &oauth2.Config{
+		ClientID:     conf.AppID,
+		ClientSecret: conf.Secret,
+		Endpoint: oauth2.Endpoint{
+			AuthURL:  conf.URL + "/oauth/authorize",
+			TokenURL: conf.URL + "/oauth/token",
+		},
+		Scopes: []string{"api"},
+	}
 
 	// create session middleware
 	mux := http.NewServeMux()
@@ -49,6 +61,19 @@ func main() {
 		jsonapi.API{"/api/setOwner", myapi.setOwner},
 		jsonapi.API{"/api/setDesc", myapi.setDesc},
 		jsonapi.API{"/api/webhook", mywebhook.entry},
+	}, mux)
+
+	// oauth entries
+	myauth := &auth{
+		config:  oauth,
+		baseURL: conf.URL,
+		path:    conf.Path,
+		token:   conf.Token,
+	}
+	mux.HandleFunc("/api/callback", myauth.Callback)
+	jsonapi.Register([]jsonapi.API{
+		jsonapi.API{"/api/auth", myauth.Auth},
+		jsonapi.API{"/api/me", myauth.Me},
 	}, mux)
 
 	http.ListenAndServe(":8000", nil)

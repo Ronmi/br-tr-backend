@@ -7,6 +7,18 @@ import (
 )
 
 const SIDKey = "sessid"
+const ContextKey = "session"
+
+// ContextData is the data format we store in context
+type ContextData struct {
+	M    *Manager
+	SID  string
+	Data *SessionData
+}
+
+func (d ContextData) Save() {
+	d.M.Save(d.SID, d.Data)
+}
 
 // middleware is session middleware
 type middleware struct {
@@ -33,8 +45,11 @@ func (m *middleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Expires:  time.Now().Add(time.Duration(m.M.GetTTL()) * time.Millisecond),
 		HttpOnly: true,
 	})
-	ctx = context.WithValue(ctx, "sessmgr", m.M)
-	ctx = context.WithValue(ctx, "sessdata", data)
+	ctx = context.WithValue(ctx, ContextKey, ContextData{
+		M:    m.M,
+		SID:  sid,
+		Data: data,
+	})
 
 	m.ServeMux.ServeHTTP(w, r.WithContext(ctx))
 }
