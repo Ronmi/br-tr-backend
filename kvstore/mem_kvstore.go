@@ -6,7 +6,7 @@ import (
 )
 
 type memoryStoreElement struct {
-	value interface{}
+	value Data
 	until time.Time
 }
 type memoryStore struct {
@@ -14,19 +14,19 @@ type memoryStore struct {
 	lock *sync.RWMutex
 }
 
-func (s *memoryStore) Get(k string) (ret interface{}) {
+func (s *memoryStore) Get(k string) (ret Data) {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 	return s.doGet(k)
 }
 
-func (s *memoryStore) Set(k string, v interface{}, ttl int) {
+func (s *memoryStore) Set(k string, v Data, ttl int) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	s.doSet(k, v, ttl)
 }
 
-func (s *memoryStore) SetIf(k string, v, oldValue interface{}, ttl int) bool {
+func (s *memoryStore) SetIf(k string, v, oldValue Data, ttl int) bool {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	ret := false
@@ -37,14 +37,14 @@ func (s *memoryStore) SetIf(k string, v, oldValue interface{}, ttl int) bool {
 	return ret
 }
 
-func (s *memoryStore) doGet(k string) (ret interface{}) {
+func (s *memoryStore) doGet(k string) (ret Data) {
 	if data, ok := s.data[k]; ok && time.Now().Before(data.until) {
 		ret = data.value
 	}
 	return
 }
 
-func (s *memoryStore) doSet(k string, v interface{}, ttl int) {
+func (s *memoryStore) doSet(k string, v Data, ttl int) {
 	if ttl <= 0 {
 		delete(s.data, k)
 		return
