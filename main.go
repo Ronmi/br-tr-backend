@@ -16,6 +16,7 @@ import (
 )
 
 type gitlabConf struct {
+	AppURL string `json:"appUrl"`
 	URL    string `json:"baseUrl"`
 	Path   string `json:"apiPath"`
 	Token  string `json:"token"`
@@ -48,7 +49,8 @@ func main() {
 			AuthURL:  conf.URL + "/oauth/authorize",
 			TokenURL: conf.URL + "/oauth/token",
 		},
-		Scopes: []string{"api"},
+		RedirectURL: conf.AppURL + "/api/callback",
+		Scopes:      []string{"api"},
 	}
 
 	// create session middleware
