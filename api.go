@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"net/http"
 
 	"github.com/Patrolavia/jsonapi"
 )
@@ -24,12 +23,12 @@ func (a *api) setOwner(dec *json.Decoder, httpData *jsonapi.HTTP) (interface{}, 
 
 	var param p
 	if err := dec.Decode(&param); err != nil {
-		return nil, jsonapi.Error{http.StatusBadRequest, "Parameter error"}
+		return nil, jsonapi.E401.SetData("Parameter error")
 	}
 
 	// non of these fields can be empty
 	if param.Repo == "" || param.Branch == "" || param.Owner == "" {
-		return nil, jsonapi.Error{http.StatusBadRequest, "Parameter cannot be empty"}
+		return nil, jsonapi.E401.SetData("Parameter cannot be empty")
 	}
 
 	return nil, a.store.UpdateOwner(param.Repo, param.Branch, param.Owner)
@@ -44,12 +43,12 @@ func (a *api) setDesc(dec *json.Decoder, httpData *jsonapi.HTTP) (interface{}, e
 
 	var param p
 	if err := dec.Decode(&param); err != nil {
-		return nil, jsonapi.Error{http.StatusBadRequest, "Parameter error"}
+		return nil, jsonapi.E401.SetData("Parameter error")
 	}
 
 	// non of these fields can be empty
 	if param.Repo == "" || param.Branch == "" || param.Desc == "" {
-		return nil, jsonapi.Error{http.StatusBadRequest, "Parameter cannot be empty"}
+		return nil, jsonapi.E401.SetData("Parameter cannot be empty")
 	}
 
 	return nil, a.store.UpdateDesc(param.Repo, param.Branch, param.Desc)

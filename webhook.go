@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"net/http"
 
 	"github.com/Patrolavia/jsonapi"
 )
@@ -32,7 +31,7 @@ type webhookPayload struct {
 func (w *webhook) entry(dec *json.Decoder, httpData *jsonapi.HTTP) (ret interface{}, err error) {
 	var param webhookPayload
 	if err := dec.Decode(&param); err != nil {
-		return nil, jsonapi.Error{http.StatusBadRequest, "Incorrect format"}
+		return nil, jsonapi.E401.SetData("Incorrect format")
 	}
 
 	id := 0
@@ -50,9 +49,6 @@ func (w *webhook) entry(dec *json.Decoder, httpData *jsonapi.HTTP) (ret interfac
 
 	if name != "" && id > 0 {
 		err = w.fetchProject(name, id)
-	}
-	if err != nil {
-		err = jsonapi.Error{http.StatusInternalServerError, err.Error()}
 	}
 
 	return
