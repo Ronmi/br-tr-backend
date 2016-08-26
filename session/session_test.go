@@ -3,6 +3,8 @@ package session
 import (
 	"testing"
 
+	"golang.org/x/oauth2"
+
 	"github.com/Ronmi/br-tr-backend/kvstore"
 )
 
@@ -39,7 +41,7 @@ func TestSession(t *testing.T) {
 	m := makeManager()
 
 	sid, old := m.Allocate()
-	old.Token = "test"
+	old.Token = &oauth2.Token{}
 	m.Save(sid, old)
 
 	data := m.Get(sid)
