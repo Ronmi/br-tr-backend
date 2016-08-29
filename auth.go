@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"math/rand"
 	"net/http"
@@ -9,15 +8,13 @@ import (
 
 	"github.com/Patrolavia/jsonapi"
 	"github.com/Ronmi/br-tr-backend/session"
-	gogitlab "github.com/plouc/go-gitlab-client"
+	"github.com/Ronmi/gitlab"
 	"golang.org/x/oauth2"
 )
 
 type auth struct {
-	config  *oauth2.Config
-	baseURL string
-	path    string
-	token   string
+	config *oauth2.Config
+	client *gitlab.GitLab
 }
 
 func (a *auth) Auth(dec *json.Decoder, httpData *jsonapi.HTTP) (interface{}, error) {
@@ -41,7 +38,7 @@ func (a *auth) Callback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// get access token
-	token, err := a.config.Exchange(context.TODO(), code)
+	token, err := a.config.Exchange(r.Context(), code)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -69,19 +66,19 @@ func (a *auth) Me(dec *json.Decoder, httpData *jsonapi.HTTP) (interface{}, error
 	if sess.Data.Token == nil {
 		return guest, nil
 	}
-	if sess.Data.User.Id != 0 {
+	if sess.Data.User.ID != 0 {
 		return result{
-			ID:       sess.Data.User.Id,
+			ID:       sess.Data.User.ID,
 			Username: sess.Data.User.Username,
 			Name:     sess.Data.User.Name,
-			Avatar:   sess.Data.User.AvatarUrl,
+			Avatar:   sess.Data.User.AvatarURL,
 		}, nil
 	}
 
 	// fetch user info
-	client := gogitlab.NewGitlab(a.baseURL, a.path, a.token)
-	client.Client = a.config.Client(context.TODO(), sess.Data.Token)
-	u, err := client.CurrentUser()
+	source := a.config.TokenSource(httpData.Request.Context(), sess.Data.Token)
+	client := a.client.WithOAuth(source)
+	u, err := client.Me()
 	if err != nil {
 		return guest, nil
 	}
@@ -90,9 +87,9 @@ func (a *auth) Me(dec *json.Decoder, httpData *jsonapi.HTTP) (interface{}, error
 	sess.Save()
 
 	return result{
-		ID:       u.Id,
+		ID:       u.ID,
 		Username: u.Username,
 		Name:     u.Name,
-		Avatar:   u.AvatarUrl,
+		Avatar:   u.AvatarURL,
 	}, nil
 }

@@ -12,7 +12,7 @@ import (
 	"github.com/Patrolavia/jsonapi"
 	"github.com/Ronmi/br-tr-backend/kvstore"
 	"github.com/Ronmi/br-tr-backend/session"
-	gogitlab "github.com/plouc/go-gitlab-client"
+	"github.com/Ronmi/gitlab"
 )
 
 type gitlabConf struct {
@@ -41,7 +41,8 @@ func main() {
 	store := &MemStore{[]Project{}, &sync.RWMutex{}}
 	conf := loadGitlabConf("gitlab.json")
 	myapi := &api{store}
-	mywebhook := &webhook{&GogitlabProvider{gogitlab.NewGitlab(conf.URL, conf.Path, conf.Token)}, store}
+	client := gitlab.FromPAT(conf.URL, conf.Path, conf.Token, nil)
+	mywebhook := &webhook{client, store}
 	oauth := &oauth2.Config{
 		ClientID:     conf.AppID,
 		ClientSecret: conf.Secret,
@@ -67,10 +68,8 @@ func main() {
 
 	// oauth entries
 	myauth := &auth{
-		config:  oauth,
-		baseURL: conf.URL,
-		path:    conf.Path,
-		token:   conf.Token,
+		config: oauth,
+		client: client,
 	}
 	mux.HandleFunc("/api/callback", myauth.Callback)
 	jsonapi.Register([]jsonapi.API{

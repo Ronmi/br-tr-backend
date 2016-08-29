@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/Ronmi/br-tr-backend/kvstore"
-	gogitlab "github.com/plouc/go-gitlab-client"
+	"github.com/Ronmi/gitlab"
 	"golang.org/x/oauth2"
 )
 
@@ -23,7 +23,7 @@ func init() {
 type SessionData struct {
 	Token         *oauth2.Token // gitlab access token
 	ValidateOAUTH string
-	User          gogitlab.User
+	User          gitlab.User
 }
 
 func (d *SessionData) MarshalJSON() ([]byte, error) {

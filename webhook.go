@@ -4,10 +4,11 @@ import (
 	"encoding/json"
 
 	"github.com/Patrolavia/jsonapi"
+	"github.com/Ronmi/gitlab"
 )
 
 type webhook struct {
-	gitlab GitlabProvider
+	gitlab *gitlab.GitLab
 	store  DataStore
 }
 
@@ -55,9 +56,17 @@ func (w *webhook) entry(dec *json.Decoder, httpData *jsonapi.HTTP) (ret interfac
 }
 
 func (w *webhook) fetchProject(n string, id int) (err error) {
-	brs, err := w.gitlab.Branches(id)
+	brs, pages, err := w.gitlab.ListBranches(id, nil)
 	if err != nil {
 		return
+	}
+	for pages.TotalPages > pages.Page {
+		var _b []gitlab.Branch
+		_b, pages, err = w.gitlab.ListBranches(id, &gitlab.ListOption{Page: pages.NextPage})
+		if err != nil {
+			return
+		}
+		brs = append(brs, _b...)
 	}
 
 	p := Project{
@@ -66,7 +75,7 @@ func (w *webhook) fetchProject(n string, id int) (err error) {
 	}
 
 	for _, br := range brs {
-		p.Branches = append(p.Branches, Branch{Name: br})
+		p.Branches = append(p.Branches, Branch{Name: br.Name})
 	}
 
 	return w.store.AddProjects([]Project{p})
