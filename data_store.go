@@ -8,5 +8,8 @@ type DataStore interface {
 
 	// insert or update projects into store
 	AddProjects(ps []Project) error
-	//AddBranch(repo string, br Branch) error
+	AddBranch(repo string, br Branch) error
+
+	// FindProj finds if specified project exists in store
+	FindProj(repo string) (ret Project, ok bool)
 }

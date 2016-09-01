@@ -113,3 +113,23 @@ func (s *MemStore) AddProjects(ps []Project) error {
 
 	return nil
 }
+
+func (s *MemStore) FindProj(repo string) (p Project, ok bool) {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+	for _, p := range s.projects {
+		if p.Name == repo {
+			return p, true
+		}
+	}
+	return
+}
+
+func (s *MemStore) AddBranch(repo string, br Branch) error {
+	p, ok := s.FindProj(repo)
+	if !ok {
+		return fmt.Errorf("project %s is not found", repo)
+	}
+	p.Branches = append(p.Branches, br)
+	return s.AddProjects([]Project{p})
+}
