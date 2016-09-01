@@ -1,61 +1,35 @@
 package main
 
 import (
-	"encoding/json"
-
-	"github.com/Patrolavia/jsonapi"
 	"github.com/Ronmi/gitlab"
+	"github.com/Ronmi/gitlab/webhook"
 )
 
-type webhook struct {
+type wh struct {
 	gitlab *gitlab.GitLab
 	store  DataStore
+	push   chan webhook.PushEvent
+	mr     chan webhook.MergeRequestEvent
 }
 
-type webhookProject struct {
-	Path string `json:"path_with_namespace"`
-}
-type webhookAttr struct {
-	State           string         `json:"state"`
-	SourceProjectID int            `json:"source_project_id"`
-	TargetProjectID int            `json:"target_project_id"`
-	Source          webhookProject `json:"source,omitempty"`
-	Target          webhookProject `json:"target,omitempty"`
-}
-type webhookPayload struct {
-	Kind      string         `json:"object_kind"`
-	ProjectID int            `json:"project_id,omitempty"`
-	Project   webhookProject `json:"project,omitempty"`
-	Attr      webhookAttr    `json:"object_attributes,omitempty"`
-}
-
-func (w *webhook) entry(dec *json.Decoder, httpData *jsonapi.HTTP) (ret interface{}, err error) {
-	var param webhookPayload
-	if err := dec.Decode(&param); err != nil {
-		return nil, jsonapi.E401.SetData("Incorrect format")
+func (w *wh) p() {
+	for e := range w.push {
+		w.fetchProject(e.Project.PathWithNamespace, e.ProjectID)
 	}
-
-	id := 0
-	name := ""
-	switch param.Kind {
-	case "push":
-		name = param.Project.Path
-		id = param.ProjectID
-	case "merge_request":
-		if param.Attr.State == "merged" {
-			name = param.Attr.Target.Path
-			id = param.Attr.TargetProjectID
-		}
-	}
-
-	if name != "" && id > 0 {
-		err = w.fetchProject(name, id)
-	}
-
-	return
 }
 
-func (w *webhook) fetchProject(n string, id int) (err error) {
+func (w *wh) m() {
+	for e := range w.mr {
+		w.fetchProject(e.ObjectAttributes.Target.PathWithNamespace, e.ObjectAttributes.TargetProjectID)
+	}
+}
+
+func (w *wh) start() {
+	go w.p()
+	go w.m()
+}
+
+func (w *wh) fetchProject(n string, id int) {
 	brs, pages, err := w.gitlab.ListBranches(id, nil)
 	if err != nil {
 		return
@@ -78,5 +52,5 @@ func (w *webhook) fetchProject(n string, id int) (err error) {
 		p.Branches = append(p.Branches, Branch{Name: br.Name})
 	}
 
-	return w.store.AddProjects([]Project{p})
+	w.store.AddProjects([]Project{p})
 }

@@ -13,6 +13,7 @@ import (
 	"github.com/Ronmi/br-tr-backend/kvstore"
 	"github.com/Ronmi/br-tr-backend/session"
 	"github.com/Ronmi/gitlab"
+	"github.com/Ronmi/gitlab/webhook"
 )
 
 type gitlabConf struct {
@@ -42,7 +43,12 @@ func main() {
 	conf := loadGitlabConf("gitlab.json")
 	myapi := &api{store}
 	client := gitlab.FromPAT(conf.URL, conf.Path, conf.Token, nil)
-	mywebhook := &webhook{client, store}
+	handler := &webhook.Handler{
+		Push:         make(chan webhook.PushEvent),
+		MergeRequest: make(chan webhook.MergeRequestEvent),
+	}
+	http.Handle("/api/webhook", handler)
+	(&wh{client, store, handler.Push, handler.MergeRequest}).start()
 	oauth := &oauth2.Config{
 		ClientID:     conf.AppID,
 		ClientSecret: conf.Secret,
@@ -63,7 +69,6 @@ func main() {
 		jsonapi.API{"/api/list", myapi.list},
 		jsonapi.API{"/api/setOwner", myapi.setOwner},
 		jsonapi.API{"/api/setDesc", myapi.setDesc},
-		jsonapi.API{"/api/webhook", mywebhook.entry},
 	}, mux)
 
 	// oauth entries
