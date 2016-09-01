@@ -41,7 +41,6 @@ func loadGitlabConf(fn string) (ret gitlabConf) {
 func main() {
 	store := &MemStore{[]Project{}, &sync.RWMutex{}}
 	conf := loadGitlabConf("gitlab.json")
-	myapi := &api{store}
 	client := gitlab.FromPAT(conf.URL, conf.Path, conf.Token, nil)
 	handler := &webhook.Handler{
 		Push:         make(chan webhook.PushEvent),
@@ -49,6 +48,8 @@ func main() {
 	}
 	http.Handle("/api/webhook", handler)
 	(&wh{client, store, handler.Push, handler.MergeRequest}).start()
+
+	myapi := &api{store, client}
 	oauth := &oauth2.Config{
 		ClientID:     conf.AppID,
 		ClientSecret: conf.Secret,
@@ -69,6 +70,7 @@ func main() {
 		jsonapi.API{"/api/list", myapi.list},
 		jsonapi.API{"/api/setOwner", myapi.setOwner},
 		jsonapi.API{"/api/setDesc", myapi.setDesc},
+		jsonapi.API{"/api/addBranch", myapi.addBranch},
 	}, mux)
 
 	// oauth entries

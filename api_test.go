@@ -8,7 +8,7 @@ import (
 )
 
 func makeAPI() *api {
-	return &api{makeMemStore()}
+	return &api{makeMemStore(), nil}
 }
 
 func TestAPIList(t *testing.T) {
