@@ -1,6 +1,8 @@
 package main
 
 import (
+	"strconv"
+
 	"github.com/Ronmi/gitlab"
 	"github.com/Ronmi/gitlab/webhook"
 )
@@ -29,7 +31,8 @@ func (w *wh) start() {
 	go w.m()
 }
 
-func (w *wh) fetchProject(n string, id int) {
+func (w *wh) fetchProject(n string, pid int) {
+	id := strconv.Itoa(pid)
 	brs, pages, err := w.gitlab.ListBranches(id, nil)
 	if err != nil {
 		return
