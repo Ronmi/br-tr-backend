@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -39,6 +40,9 @@ func loadGitlabConf(fn string) (ret gitlabConf) {
 }
 
 func main() {
+	var addr string
+	flag.StringVar(&addr, "http", ":8000", "inet address to bind to")
+	flag.Parse()
 	store := &MemStore{[]Project{}, &sync.RWMutex{}}
 	conf := loadGitlabConf("gitlab.json")
 	client := gitlab.FromPAT(conf.URL, conf.Path, conf.Token, nil)
